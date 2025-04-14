@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - master
-  # schedule:
-  #   - cron: "0 8 * * *"
-  #   - cron: "0 20 * * *"
+  schedule:
+    - cron: "0 20 * * *"
+  workflow_dispatch: # agar bisa dijalankan manual juga
 
 jobs:
   build:
@@ -19,12 +19,23 @@ jobs:
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.16.9" # ganti sesuai versi kamu
+          flutter-version: "3.16.9"
 
-      - name: Install dependencies
+      - name: Decode Keystore File
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/my-release-key.jks
+
+      - name: Set Up Android Key Properties
+        run: |
+          echo "storeFile=${{ secrets.KEYSTORE_PATH }}" >> android/key.properties
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+
+      - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build Apk
+      - name: Build APK (Release)
         run: flutter build apk --release
 
       - name: Upload to Firebase App Distribution
